@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lovely Weather</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #ffc3a0 0%, #ffa8a8 30%, #ffdde1 70%, #ee9ca7 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 15s ease infinite;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        #heart-canvas, #fireworks-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        #heart-canvas { z-index: 1; }
+        #fireworks-canvas { z-index: 2; }
+
+        .card {
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            padding: 40px 35px;
+            border-radius: 32px;
+            box-shadow: 0 20px 50px rgba(238, 156, 167, 0.3),
+                        0 10px 20px rgba(0, 0, 0, 0.05),
+                        inset 0 1px 1px rgba(255, 255, 255, 0.8);
+            text-align: center;
+            max-width: 480px;
+            width: 90%;
+            position: relative;
+            min-height: 440px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .page {
+            display: none;
+            width: 100%;
+            animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #d85c78;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+        }
+
+        h1 {
+            color: #2d2d2d;
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        p {
+            color: #5a5a5a;
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            font-weight: 500;
+        }
+
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-top: 10px;
+            min-height: 55px;
+            width: 100%;
+            position: relative;
+        }
+
+        button {
+            background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            font-size: 15px;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(255, 117, 140, 0.4),
+                        inset 0 1px 1px rgba(255, 255, 255, 0.4);
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s, background 0.3s;
+            letter-spacing: 0.3px;
+        }
+
+        button:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 14px 30px rgba(255, 117, 140, 0.5);
+        }
+
+        button:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        #no-btn.is-no {
+            background: rgba(255, 255, 255, 0.85);
+            color: #777;
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            position: relative;
+            z-index: 20;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #no-btn.is-no:hover {
+            color: #333;
+        }
+
+        #no-btn.is-yes {
+            background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 10px 25px rgba(255, 117, 140, 0.4);
+            transform: translate(0, 0) !important;
+        }
+
+        .letter-content {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 24px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.02),
+                        0 8px 20px rgba(0,0,0,0.03);
+            max-height: 230px;
+            overflow-y: auto;
+            margin-bottom: 22px;
+            text-align: left;
+        }
+
+        .letter-content p {
+            font-family: 'Caveat', cursive;
+            font-size: 20px;
+            color: #333;
+            line-height: 1.4;
+            margin-bottom: 12px;
+        }
+
+        .letter-content p.signature {
+            text-align: right;
+            font-weight: 600;
+            color: #ff5e7e;
+            margin-top: 15px;
+            margin-bottom: 0;
+        }
+
+        /* Overlay Background Stickers */
+        .gif-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 5;
+            overflow: hidden;
+        }
+
+        .scattered-gif {
+            position: absolute;
+            width: 110px;
+            height: 110px;
+            object-fit: contain;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1));
+        }
+
+        .gif1 { top: 6%; left: 5%; animation: floatAesthetic 4s ease-in-out infinite alternate; }
+        .gif2 { top: 8%; right: 6%; animation: floatAesthetic 3.8s ease-in-out infinite alternate 0.5s; }
+        .gif3 { bottom: 12%; left: 6%; animation: floatAesthetic 4.2s ease-in-out infinite alternate 1s; }
+        .gif4 { bottom: 10%; right: 5%; animation: floatAesthetic 3.5s ease-in-out infinite alternate 1.5s; }
+        .gif7 { top: 45%; left: 3%; animation: floatAesthetic 3.9s ease-in-out infinite alternate 0.8s; }
+        .gif8 { top: 45%; right: 3%; animation: floatAesthetic 4.1s ease-in-out infinite alternate 1.2s; }
+        .gif9 { top: 22%; left: 15%; animation: floatAesthetic 3.6s ease-in-out infinite alternate 0.3s; }
+        .gif10 { top: 22%; right: 15%; animation: floatAesthetic 4.3s ease-in-out infinite alternate 0.7s; }
+
+        .gif5 { 
+            top: 20px; 
+            left: -120px; 
+            animation: runAcrossTop 12s linear infinite; 
+        }
+        .gif6 { 
+            bottom: 20px; 
+            right: -120px; 
+            animation: runAcrossBottom 10s linear infinite; 
+        }
+        .gif11 { 
+            top: 50%; 
+            left: -120px; 
+            animation: runAcrossTop 14s linear infinite 2s; 
+        }
+
+        @keyframes runAcrossTop {
+            0% { transform: translateX(0) scaleX(1); }
+            100% { transform: translateX(calc(100vw + 240px)) scaleX(1); }
+        }
+
+        @keyframes runAcrossBottom {
+            0% { transform: translateX(0) scaleX(-1); }
+            100% { transform: translateX(calc(-100vw - 240px)) scaleX(-1); }
+        }
+
+        @keyframes floatAesthetic {
+            0% { transform: translateY(0px) rotate(-5deg); }
+            100% { transform: translateY(-18px) rotate(8deg); }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(20, 15, 30, 0.35);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 1);
+            padding: 35px 30px;
+            border-radius: 32px;
+            text-align: center;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.2);
+            max-width: 440px;
+            width: 88%;
+            animation: modalPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            position: relative;
+            z-index: 101;
+        }
+
+        .modal-content h2 {
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 24px;
+            font-weight: 800;
+            margin: 15px 0 10px 0;
+            line-height: 1.3;
+        }
+
+        /* Screen Explosion Pop-out Container */
+        #explosion-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+            overflow: hidden;
+            display: none;
+        }
+
+        .pop-gif {
+            position: absolute;
+            width: 90px;
+            height: 90px;
+            object-fit: contain;
+            user-select: none;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            filter: drop-shadow(0 8px 15px rgba(255, 75, 110, 0.3));
+        }
+
+        .pop-msg {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.95);
+            color: #ff3366;
+            font-weight: 800;
+            font-size: 16px;
+            padding: 8px 18px;
+            border-radius: 50px;
+            box-shadow: 0 8px 20px rgba(255, 51, 102, 0.25);
+            border: 2px solid #ff758c;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            white-space: nowrap;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+            80% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(20px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes modalPop {
+            from { opacity: 0; transform: scale(0.7) translateY(30px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .letter-content::-webkit-scrollbar { width: 6px; }
+        .letter-content::-webkit-scrollbar-track { background: rgba(0,0,0,0.03); border-radius: 10px; }
+        .letter-content::-webkit-scrollbar-thumb { background: rgba(255, 117, 140, 0.4); border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <canvas id="heart-canvas"></canvas>
+    <canvas id="fireworks-canvas"></canvas>
+
+    <!-- Popup Overlay for GIF Screen Explosion -->
+    <div id="explosion-container"></div>
+
+    <!-- BACKGROUND GIFS / STICKERS CODE BLOCK (11 TOTAL) -->
+    <div id="gif-container" class="gif-overlay">
+        <!-- Floating Stickers -->
+        <img src="gifs/Bump Bump Love Sticker.gif" class="scattered-gif gif1" alt="Sticker 1">
+        <img src="gifs/Cat Kiss Sticker.gif" class="scattered-gif gif2" alt="Sticker 2">
+        <img src="gifs/Happy I Love You Sticker by Kennysgifs (1).gif" class="scattered-gif gif3" alt="Sticker 3">
+        <img src="gifs/Happy I Love You Sticker by Kennysgifs.gif" class="scattered-gif gif4" alt="Sticker 4">
+        <img src="gifs/In Love Kiss Sticker.gif" class="scattered-gif gif7" alt="Sticker 7">
+        <img src="gifs/Kisses Love Sticker.gif" class="scattered-gif gif8" alt="Sticker 8">
+        <img src="gifs/Happy I Love You Sticker.gif" class="scattered-gif gif9" alt="Sticker 9">
+        <img src="gifs/Bump Bump Love Sticker.gif" class="scattered-gif gif10" alt="Sticker 10">
+
+        <!-- Running Animations -->
+        <img src="gifs/Animation Running Sticker by KETNIPZ.gif" class="scattered-gif gif5" alt="Sticker 5">
+        <img src="gifs/Run Running Sticker.gif" class="scattered-gif gif6" alt="Sticker 6">
+        <img src="gifs/Animation Running Sticker by KETNIPZ.gif" class="scattered-gif gif11" alt="Sticker 11">
+    </div>
+
+    <!-- Card Container -->
+    <div class="card" id="main-card">
+        <!-- PAGE 1 -->
+        <div id="page1" class="page active">
+            <span class="badge">A quick reminder</span>
+            <h1>Hi Love! 🌻</h1>
+            <p>Open this and smile right now! Ready to take a quick break from studying?</p>
+            <div class="btn-group">
+                <button id="ok-btn" onclick="openPage2Popout()">OKAY</button>
+                <button id="no-btn" class="is-no" onclick="handleNoClick()">NO</button>
+            </div>
+        </div>
+
+        <!-- PAGE 3 -->
+        <div id="page3" class="page">
+            <span class="badge">My Magtutudlo🥱</span>
+            <h1>Believe Yourself</h1>
+            
+            <div class="letter-content">
+                <p>My dearest love,</p>
+                <p>I see how hard you study every single day, turning page after page and pouring your entire heart into preparing for this exam. Your dedication inspires me so much.</p>
+                <p>Whenever you feel stressed or doubt yourself, please remember to focus on your goal and ignore all the negative feedback or anything bad other people say. This is your own journey, so never let anyone stop you or bring you down. You possess all the knowledge, kindness, and strength needed to pass and reach your dreams.</p>
+                <p>I believe in you with all my heart, and your success is my success too syempre, buhi-on pa ko nimo! You've got this!</p>
+                <p class="signature">Always cheering for you,<br>Your #1 Fan (Wynnie Da Poop)</p>
+            </div>
+
+            <button onclick="openMonthsaryModal()">Next Surprise 💌</button>
+        </div>
+    </div>
+
+    <!-- MODAL 1 -->
+    <div id="page2Modal" class="modal">
+        <div class="modal-content">
+            <span class="badge">IM SO PROUD OF YOU</span>
+            <h2>I Knew You'd Say Yes! di mo ako matiis eh nuxss</h2>
+            <p>I know gikapoy naka bebe, pero naa rako kanunay bebu
+                you are handling everything with so much grace, and I am always so proud of you!</p>
+            <button onclick="closePage2Popout()">Keep Reading</button>
+        </div>
+    </div>
+
+    <!-- MODAL 2 -->
+    <div id="monthsaryModal" class="modal">
+        <div class="modal-content">
+    <span class="badge">Special Day for Special Person</span>
+    <h2>Happy Monthsary Bonnie!</h2>
+    <div class="letter-content">
+        <p>Happy Monthsary to my favorite crime!</p>
+        <p>Thank you for being my source of happiness and sadness(but in a good way si OA muhilak napod ni ron), my pride, and my strength every day. You are my biggest and wonderful true gift.charr</p>
+        <p>I also want to say sorry for my attitude. I know kapoy na kaayo ka sa tanan, tapos mosamot pa usahay tungod nako kay you know tukaron man ko. I'm really sorry, love. I hope dili mabawasan imong love nako tungod ana. Love kaayo teka(aws jjmon sii), and I promise to keep working on myself for you.</p>
+        <p>No matter how busy life gets, my heart is always right here holding your hand. Here is to celebrating us today and all our future successes together!</p>
+        <p class="signature">Forever & Always💜💛</p>
+    </div>
+    <button onclick="startLoveExplosion()">I Love You Always and Always</button>
+</div>
+    </div>
+
+    <script>
+        const noBtn = document.getElementById('no-btn');
+        let isTransformedToYes = false;
+
+        document.addEventListener('mousemove', (e) => {
+            if (isTransformedToYes) return; 
+
+            const btnRect = noBtn.getBoundingClientRect();
+            const btnCenterX = btnRect.left + btnRect.width / 2;
+            const btnCenterY = btnRect.top + btnRect.height / 2;
+
+            const distanceX = e.clientX - btnCenterX;
+            const distanceY = e.clientY - btnCenterY;
+            const distance = Math.hypot(distanceX, distanceY);
+
+            if (distance < 120) {
+                const angle = Math.atan2(distanceY, distanceX);
+                const moveDistance = 140; 
+                const targetX = -Math.cos(angle) * moveDistance;
+                const targetY = -Math.sin(angle) * moveDistance;
+
+                noBtn.style.transform = `translate(${targetX}px, ${targetY}px)`;
+            }
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            if (isTransformedToYes || !e.touches[0]) return;
+            const touch = e.touches[0];
+            const btnRect = noBtn.getBoundingClientRect();
+            const distance = Math.hypot(touch.clientX - (btnRect.left + btnRect.width / 2), touch.clientY - (btnRect.top + btnRect.height / 2));
+
+            if (distance < 100) {
+                const randomX = (Math.random() - 0.5) * 200;
+                const randomY = (Math.random() - 0.5) * 160;
+                noBtn.style.transform = `translate(${randomX}px, ${randomY}px)`;
+            }
+        });
+
+        function handleNoClick() {
+            if (!isTransformedToYes) {
+                isTransformedToYes = true;
+                noBtn.classList.remove('is-no');
+                noBtn.classList.add('is-yes');
+                noBtn.innerText = 'YES!';
+            } else {
+                openPage2Popout();
+            }
+        }
+
+        let animationActive = false;
+
+        function openPage2Popout() {
+            document.getElementById('page2Modal').style.display = 'flex';
+            document.getElementById('gif-container').style.display = 'block'; 
+            animationActive = true;
+            triggerFireworksBurst();
+            startHeartsAndFireworks();
+        }
+
+        function closePage2Popout() {
+            document.getElementById('page2Modal').style.display = 'none';
+            nextPage(3);
+        }
+
+        function openMonthsaryModal() {
+            document.getElementById('monthsaryModal').style.display = 'flex';
+        }
+
+        function nextPage(pageNumber) {
+            const pages = document.querySelectorAll('.page');
+            const gifContainer = document.getElementById('gif-container');
+            
+            pages.forEach(page => page.classList.remove('active'));
+
+            if (pageNumber === 1) {
+                isTransformedToYes = false;
+                noBtn.classList.remove('is-yes');
+                noBtn.classList.add('is-no');
+                noBtn.innerText = 'NO';
+                noBtn.style.transform = 'translate(0px, 0px)';
+                gifContainer.style.display = 'none';
+                animationActive = false;
+                clearCanvas();
+                stopExplosion();
+            } else if (pageNumber === 3) {
+                gifContainer.style.display = 'block';
+                animationActive = true;
+                startHeartsAndFireworks();
+            } else {
+                gifContainer.style.display = 'none';
+                animationActive = false;
+                clearCanvas();
+            }
+
+            document.getElementById(`page${pageNumber}`).classList.add('active');
+        }
+
+        /* --- GIF & Custom Text Pop-Out Engine --- */
+        let explosionInterval;
+        
+        // List of local GIF files that pop up across the screen
+        const popGifs = [
+            'popout/World Pride Love Sticker by Emoji.gif',
+            'popout/Valentines Day Love Sticker by megan lockhart.gif',
+            'popout/Run Running Sticker.gif',
+            'popout/Love You Kiss Sticker by feierSun.gif',
+            'popout/Kisses Love Sticker.gif',
+            'popout/In Love Kiss Sticker.gif',
+            'popout/I Love You Valentines Sticker.gif',
+            'popout/I Love You Sticker.gif',
+            'popout/I Love You Sticker by ircha_gram.gif',
+            'popout/Heart Love Sticker by すこぶる動くウサギ.gif',
+            'popout/Heart Love Sticker by Portraits By Z.gif',
+            'popout/Heart Love Sticker by Originals.gif',
+            'popout/Happy I Love You Sticker.gif',
+            'popout/Happy Falling In Love Sticker by Fresa Creativa.gif'
+        ];
+
+        // 3 rotating custom text messages
+        const popMessages = [
+            'iloveyou always',
+            'mahal kita',
+            'muahhhh'
+        ];
+
+        function startLoveExplosion() {
+            document.getElementById('monthsaryModal').style.display = 'none';
+            const container = document.getElementById('explosion-container');
+            container.style.display = 'block';
+            container.innerHTML = ''; 
+
+            let count = 0;
+            let msgIndex = 0;
+
+            explosionInterval = setInterval(() => {
+                count++;
+                
+                const x = Math.random() * (window.innerWidth - 120);
+                const y = Math.random() * (window.innerHeight - 100);
+
+                if (count % 3 === 0) {
+                    const msgEl = document.createElement('div');
+                    msgEl.className = 'pop-msg';
+                    msgEl.style.left = `${x}px`;
+                    msgEl.style.top = `${y}px`;
+                    
+                    // Cycles sequentially through all 3 text messages
+                    msgEl.innerText = popMessages[msgIndex % popMessages.length];
+                    msgIndex++;
+
+                    container.appendChild(msgEl);
+                } else {
+                    const gifEl = document.createElement('img');
+                    gifEl.className = 'pop-gif';
+                    gifEl.src = popGifs[Math.floor(Math.random() * popGifs.length)];
+                    gifEl.style.left = `${x}px`;
+                    gifEl.style.top = `${y}px`;
+                    container.appendChild(gifEl);
+                }
+
+                if (count > 60) {
+                    container.style.pointerEvents = 'auto';
+                    container.onclick = resetAll;
+                }
+            }, 80); 
+        }
+
+        function stopExplosion() {
+            clearInterval(explosionInterval);
+            const container = document.getElementById('explosion-container');
+            container.style.display = 'none';
+            container.style.pointerEvents = 'none';
+            container.innerHTML = '';
+        }
+
+        function resetAll() {
+            stopExplosion();
+            document.getElementById('monthsaryModal').style.display = 'none';
+            document.getElementById('page2Modal').style.display = 'none';
+            nextPage(1);
+        }
+
+        /* --- Canvas Background Animation --- */
+        const heartCanvas = document.getElementById('heart-canvas');
+        const heartCtx = heartCanvas.getContext('2d');
+        const fireworkCanvas = document.getElementById('fireworks-canvas');
+        const fireworkCtx = fireworkCanvas.getContext('2d');
+
+        function resizeCanvas() {
+            heartCanvas.width = fireworkCanvas.width = window.innerWidth;
+            heartCanvas.height = fireworkCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let hearts = [];
+        let fireworks = [];
+        const heartColors = ['#ff758c', '#ff7eb3', '#ffb6c1', '#ba55d3', '#ff69b4', '#ff1493', '#e6e6fa', '#ffd1dc'];
+
+        function clearCanvas() {
+            heartCtx.clearRect(0, 0, heartCanvas.width, heartCanvas.height);
+            fireworkCtx.clearRect(0, 0, fireworkCanvas.width, fireworkCanvas.height);
+            hearts = [];
+            fireworks = [];
+        }
+
+        function createHeart() {
+            return {
+                x: Math.random() * heartCanvas.width,
+                y: -20,
+                size: Math.random() * 14 + 8,
+                speed: Math.random() * 2 + 1,
+                opacity: Math.random() * 0.7 + 0.3,
+                color: heartColors[Math.floor(Math.random() * heartColors.length)]
+            };
+        }
+
+        function drawHeart(x, y, size, opacity, color) {
+            heartCtx.save();
+            heartCtx.globalAlpha = opacity;
+            heartCtx.beginPath();
+            heartCtx.fillStyle = color;
+            const topCurveHeight = size * 0.3;
+            heartCtx.moveTo(x, y + topCurveHeight);
+            heartCtx.bezierCurveTo(x, y, x - size / 2, y, x - size / 2, y + topCurveHeight);
+            heartCtx.bezierCurveTo(x - size / 2, y + (size + topCurveHeight) / 2, x, y + size, x, y + size);
+            heartCtx.bezierCurveTo(x, y + size, x + size / 2, y + (size + topCurveHeight) / 2, x + size / 2, y + topCurveHeight);
+            heartCtx.bezierCurveTo(x + size / 2, y, x, y, x, y + topCurveHeight);
+            heartCtx.closePath();
+            heartCtx.fill();
+            heartCtx.restore();
+        }
+
+        function createFirework() {
+            const x = Math.random() * fireworkCanvas.width;
+            const y = Math.random() * (fireworkCanvas.height * 0.6);
+            const count = 40;
+            const particles = [];
+            for (let i = 0; i < count; i++) {
+                const angle = (Math.PI * 2 / count) * i;
+                const speed = Math.random() * 4.5 + 2;
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    alpha: 1,
+                    color: `hsl(${Math.random() * 360}, 100%, 75%)`
+                });
+            }
+            return particles;
+        }
+
+        function triggerFireworksBurst() {
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                    fireworks.push(...createFirework());
+                }, i * 180);
+            }
+        }
+
+        function startHeartsAndFireworks() {
+            function loop() {
+                if (!animationActive) return;
+
+                heartCtx.clearRect(0, 0, heartCanvas.width, heartCanvas.height);
+                if (Math.random() < 0.18) hearts.push(createHeart());
+                
+                for (let i = hearts.length - 1; i >= 0; i--) {
+                    const h = hearts[i];
+                    h.y += h.speed;
+                    drawHeart(h.x, h.y, h.size, h.opacity, h.color);
+                    if (h.y > heartCanvas.height) hearts.splice(i, 1);
+                }
+
+                fireworkCtx.clearRect(0, 0, fireworkCanvas.width, fireworkCanvas.height);
+                if (Math.random() < 0.06) fireworks.push(...createFirework());
+
+                for (let i = fireworks.length - 1; i >= 0; i--) {
+                    const p = fireworks[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.alpha -= 0.015;
+
+                    fireworkCtx.save();
+                    fireworkCtx.globalAlpha = p.alpha;
+                    fireworkCtx.fillStyle = p.color;
+                    fireworkCtx.beginPath();
+                    fireworkCtx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+                    fireworkCtx.fill();
+                    fireworkCtx.restore();
+
+                    if (p.alpha <= 0) fireworks.splice(i, 1);
+                }
+
+                requestAnimationFrame(loop);
+            }
+            loop();
+        }
+    </script>
+</body>
+</html>
